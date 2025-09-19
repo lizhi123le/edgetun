@@ -1,4 +1,4 @@
-name: 混淆并创建 GitHub 发行版
+name: troian混淆并创建 GitHub 发行版
 
 on:
   push:
