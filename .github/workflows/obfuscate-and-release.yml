@@ -264,10 +264,11 @@ jobs:
         run: |
           set -euo pipefail
           VERSION="${{ steps.extract-version.outputs.version }}"
-          echo "Checking if release or tag $VERSION exists..."
-          
+          echo "Checking for existing release or tag for version $VERSION..."
+
           # 检查是否已存在同名发行版
           RELEASE_ID=$(curl -s -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            -H "Accept: application/vnd.github+json" \
             "https://api.github.com/repos/${{ github.repository }}/releases/tags/$VERSION" | jq -r '.id // ""')
           
           if [ -n "$RELEASE_ID" ] && [ "$RELEASE_ID" != "null" ]; then
@@ -275,50 +276,69 @@ jobs:
             curl -s -X DELETE \
               -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
               -H "Accept: application/vnd.github+json" \
-              "https://api.github.com/repos/${{ github.repository }}/releases/$RELEASE_ID"
+              "https://api.github.com/repos/${{ github.repository }}/releases/$RELEASE_ID" || {
+              echo "Error: Failed to delete existing release $VERSION"
+              exit 1
+            }
           fi
-          
+
           # 检查并删除同名标签（如果存在）
           TAG_EXISTS=$(curl -s -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            -H "Accept: application/vnd.github+json" \
             "https://api.github.com/repos/${{ github.repository }}/git/refs/tags/$VERSION" | jq -e '.ref' >/dev/null && echo "true" || echo "false")
           if [ "$TAG_EXISTS" = "true" ]; then
             echo "Tag $VERSION exists, deleting it..."
             curl -s -X DELETE \
               -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
               -H "Accept: application/vnd.github+json" \
-              "https://api.github.com/repos/${{ github.repository }}/git/refs/tags/$VERSION"
+              "https://api.github.com/repos/${{ github.repository }}/git/refs/tags/$VERSION" || {
+              echo "Error: Failed to delete existing tag $VERSION"
+              exit 1
+            }
           fi
-          
-          echo "Creating GitHub Release for version $VERSION..."
+
+          echo "Creating formal GitHub Release for version $VERSION..."
           RELEASE_RESPONSE=$(curl -s -X POST \
             -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
             -H "Accept: application/vnd.github+json" \
             "https://api.github.com/repos/${{ github.repository }}/releases" \
-            -d "{\"tag_name\":\"$VERSION\",\"name\":\"$VERSION\",\"body\":\"Release for version $VERSION\",\"draft\":false,\"prerelease\":false}")
+            -d "{\"tag_name\":\"$VERSION\",\"name\":\"$VERSION\",\"body\":\"Formal release for version $VERSION\",\"draft\":false,\"prerelease\":false}")
           RELEASE_ID=$(echo "$RELEASE_RESPONSE" | jq -r '.id')
           if [ -z "$RELEASE_ID" ] || [ "$RELEASE_ID" = "null" ]; then
             echo "Error: Failed to create release for $VERSION"
             exit 1
           fi
-          echo "Release created with ID: $RELEASE_ID"
-          
+          echo "Formal release created with ID: $RELEASE_ID"
+
+          # 检查文件是否存在
+          for file in worker.zip _worker.js.backup; do
+            if [ ! -f "$file" ]; then
+              echo "Error: $file not found for upload"
+              exit 1
+            fi
+          done
+
           # 上传 worker.zip
           curl -s -X POST \
             -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
             -H "Accept: application/vnd.github+json" \
             -H "Content-Type: application/zip" \
             --data-binary "@worker.zip" \
-            "https://uploads.github.com/repos/${{ github.repository }}/releases/$RELEASE_ID/assets?name=worker.zip"
-          
+            "https://uploads.github.com/repos/${{ github.repository }}/releases/$RELEASE_ID/assets?name=worker.zip" || {
+            echo "Error: Failed to upload worker.zip"
+            exit 1
+          }
+
           # 上传 _worker.js.backup
           curl -s -X POST \
             -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
             -H "Accept: application/vnd.github+json" \
             -H "Content-Type: application/javascript" \
             --data-binary "@_worker.js.backup" \
-            "https://uploads.github.com/repos/${{ github.repository }}/releases/$RELEASE_ID/assets?name=_worker.js.backup"
+            "https://uploads.github.com/repos/${{ github.repository }}/releases/$RELEASE_ID/assets?name=_worker.js.backup" || {
+            echo "Error: Failed to upload _worker.js.backup"
+            exit 1
+          }
+          echo "Assets uploaded successfully for release $VERSION"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-
-
