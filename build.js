@@ -24,30 +24,36 @@ try {
 // 混淆配置（国家级安全级别）
 const obfuscationOptions = {
   compact: true,
-  controlFlowFlattening: true,
-  controlFlowFlatteningThreshold: 0.75,
-  deadCodeInjection: true,
-  deadCodeInjectionThreshold: 0.4,
+  controlFlowFlattening: false,
+  controlFlowFlatteningThreshold: 0,
+  deadCodeInjection: false,
   stringArray: true,
-  stringArrayEncoding: ['base64', 'rc4'],
-  stringArrayThreshold: 0.8,
-  transformObjectKeys: true,
-  rotateStringArray: true,
-  shuffleStringArray: true,
-  splitStrings: true,
-  splitStringsChunkLength: 3,
-  identifierNamesGenerator: 'mangled',
+  stringArrayEncoding: ['base64'],
+  stringArrayThreshold: 1.0,
+  stringArrayRotate: true,
+  stringArrayShuffle: true,
+  stringArrayWrappersCount: 2,
+  stringArrayWrappersChainedCalls: false,
+  stringArrayWrappersParametersMaxCount: 3,
   renameGlobals: true,
-  unicodeEscapeSequence: true,
-  selfDefending: true,
-  disableConsoleOutput: true,
+  identifierNamesGenerator: 'mangled-shuffled',
+  identifierNamesCache: null,
+  identifiersPrefix: '',
+  renameProperties: false,
+  renamePropertiesMode: 'safe',
+  ignoreImports: false,
   target: 'browser',
-  numbersToExpressions: true,
-  simplify: true,
-  ignoreRequireImports: true,
-  domainLock: [],
-  sourceMap: false,
-  sourceMapMode: 'separate'
+  numbersToExpressions: false,
+  simplify: false,
+  splitStrings: true,
+  splitStringsChunkLength: 1,
+  transformObjectKeys: false,
+  unicodeEscapeSequence: true,
+  selfDefending: false,
+  debugProtection: false,
+  debugProtectionInterval: 0,
+  disableConsoleOutput: true,
+  domainLock: []
 };
 
 // 执行混淆
@@ -61,6 +67,7 @@ try {
   process.exit(1);
 
 }
+
 
 
 
