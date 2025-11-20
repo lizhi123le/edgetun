@@ -102,9 +102,6 @@ jobs:
           sudo apt-get update -qq
           sudo apt-get install -y jq zip
 
-      # ... 中间所有步骤保持不变，只需要保留这个 if 条件 ...
-      # （为了篇幅这里省略，实际复制时全部加上下面这行 if）
-
       - name: 检查备份文件并创建 _worker_temp.js
         if: steps.check-update.outputs.has_update == 'true' || github.event_name == 'workflow_dispatch'
         run: |
