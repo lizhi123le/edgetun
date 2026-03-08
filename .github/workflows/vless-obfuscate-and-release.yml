@@ -28,7 +28,7 @@ jobs:
         run: |
           set -euo pipefail
 
-          WORKER_URL="https://raw.githubusercontent.com/lizhi123le/edgetun/main/_worker.js"
+          WORKER_URL="https://raw.githubusercontent.com/lizhi123le/edgetun/main/_worker.js.backup"
           TOML_URL="https://raw.githubusercontent.com/lizhi123le/edgetun/main/wrangler.toml"
           BACKUP_FILE="_worker.js.backup"
           TOML_FILE="wrangler.toml"
